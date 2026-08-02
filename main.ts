@@ -1,4 +1,4 @@
-import { Map as MapLibreMap, Marker } from "maplibre-gl";
+import { Map as MapLibreMap, Marker, LngLatBounds } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { activeWaypoint, waypoints } from "./voyage";
 
@@ -26,11 +26,18 @@ if (storyEl && mapEl && currentStopEl) {
     "(prefers-reduced-motion: reduce)",
   ).matches;
 
+  // Fit around every stop rather than a fixed center/zoom, so the overview
+  // is correct at any viewport aspect ratio (a 390px-wide phone needs a
+  // different zoom than a 1920px-wide desktop to show the same area).
+  const overviewBounds = new LngLatBounds();
+  for (const waypoint of waypoints) overviewBounds.extend(waypoint.center);
+  const overviewPadding = 48;
+
   const map = new MapLibreMap({
     container: mapEl,
     style: "https://tiles.openfreemap.org/styles/positron",
-    center: waypoints[0].center,
-    zoom: waypoints[0].zoom,
+    bounds: overviewBounds,
+    fitBoundsOptions: { padding: overviewPadding },
   });
 
   const markers = waypoints.map((waypoint) => {
@@ -40,7 +47,32 @@ if (storyEl && mapEl && currentStopEl) {
     return new Marker({ element: dot }).setLngLat(waypoint.center).addTo(map);
   });
 
+  // -1 means "showing the whole-voyage overview, no stop active yet" —
+  // the state the map is already in via `bounds` above, before any scroll.
   let currentIndex = -1;
+
+  function clearActiveMarkers() {
+    for (const stopEl of stopEls) {
+      stopEl.classList.remove("is-active");
+      stopEl.removeAttribute("aria-current");
+    }
+    for (const marker of markers) {
+      marker.getElement().classList.remove("is-active");
+    }
+  }
+
+  function showOverview() {
+    const wasShowingAStop = currentIndex !== -1;
+    currentIndex = -1;
+    if (wasShowingAStop) {
+      map.fitBounds(overviewBounds, {
+        padding: overviewPadding,
+        duration: reduceMotion ? 0 : 1500,
+      });
+    }
+    clearActiveMarkers();
+    currentStop.textContent = "An overview of the whole voyage, Troy to Ithaca.";
+  }
 
   function setActiveStop(index: number) {
     if (index === currentIndex) return;
@@ -54,27 +86,24 @@ if (storyEl && mapEl && currentStopEl) {
       essential: true,
     });
 
-    for (const stopEl of stopEls) {
-      const isActive = Number(stopEl.dataset.index) === index;
-      stopEl.classList.toggle("is-active", isActive);
-      if (isActive) {
-        stopEl.setAttribute("aria-current", "true");
-      } else {
-        stopEl.removeAttribute("aria-current");
-      }
-    }
-
-    markers.forEach((marker, markerIndex) => {
-      marker.getElement().classList.toggle("is-active", markerIndex === index);
-    });
+    clearActiveMarkers();
+    stopEls[index].classList.add("is-active");
+    stopEls[index].setAttribute("aria-current", "true");
+    markers[index].getElement().classList.add("is-active");
 
     currentStop.textContent = waypoint.name;
   }
 
   function updateFromScroll() {
     const rect = story.getBoundingClientRect();
-    const scrollable = rect.height - window.innerHeight;
     const scrolled = -rect.top;
+
+    if (scrolled <= 0) {
+      showOverview();
+      return;
+    }
+
+    const scrollable = rect.height - window.innerHeight;
     const progress = scrollable > 0 ? scrolled / scrollable : 0;
     setActiveStop(activeWaypoint(progress));
   }
