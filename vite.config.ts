@@ -26,4 +26,11 @@ export default defineConfig({
       input: htmlEntries(),
     },
   },
+  // maplibre-gl ships its own worker as a separate file; Vite's dep
+  // optimizer tries to pre-bundle it as a regular module and can't find it
+  // afterwards, logging a spurious "file does not exist" warning on every
+  // dev-server start. Doesn't affect the production build, only dev noise.
+  optimizeDeps: {
+    exclude: ["maplibre-gl"],
+  },
 });
