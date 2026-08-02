@@ -90,6 +90,24 @@ main {
   opacity: 0.8;
 }
 
+.waypoint-dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  background: #c0392b;
+  border: 0.15rem solid #f4f1ea;
+  box-shadow: 0 0 0.25rem rgb(0 0 0 / 50%);
+  cursor: default;
+  transition:
+    transform 0.3s ease,
+    background-color 0.3s ease;
+}
+
+.waypoint-dot.is-active {
+  background: #d9a441;
+  transform: scale(1.6);
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

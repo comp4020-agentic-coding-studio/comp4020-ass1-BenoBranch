@@ -1,4 +1,4 @@
-import { Map as MapLibreMap } from "maplibre-gl";
+import { Map as MapLibreMap, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { activeWaypoint, waypoints } from "./voyage";
 
@@ -33,6 +33,13 @@ if (storyEl && mapEl && currentStopEl) {
     zoom: waypoints[0].zoom,
   });
 
+  const markers = waypoints.map((waypoint) => {
+    const dot = document.createElement("div");
+    dot.className = "waypoint-dot";
+    dot.title = waypoint.name;
+    return new Marker({ element: dot }).setLngLat(waypoint.center).addTo(map);
+  });
+
   let currentIndex = -1;
 
   function setActiveStop(index: number) {
@@ -56,6 +63,10 @@ if (storyEl && mapEl && currentStopEl) {
         stopEl.removeAttribute("aria-current");
       }
     }
+
+    markers.forEach((marker, markerIndex) => {
+      marker.getElement().classList.toggle("is-active", markerIndex === index);
+    });
 
     currentStop.textContent = waypoint.name;
   }
