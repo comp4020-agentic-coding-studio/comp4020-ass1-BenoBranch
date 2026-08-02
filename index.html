@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>COMP4020 prototype</title>
+    <title>Retracing Odysseus's Wake</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -13,11 +13,21 @@
       </nav>
     </header>
     <main>
-      <h1>COMP4020 prototype</h1>
-      <p data-testid="intro">
-        Replace this with your prototype. This week's brief is on the course website;
-        <code>spec/README.md</code> explains how the checks in this repo relate to it.
-      </p>
+      <section id="intro">
+        <h1>Retracing Odysseus's Wake</h1>
+        <p>
+          No one agrees where any of this really happened. For as long as
+          people have told this story, they've also argued about the map
+          underneath it — this coast or that one, this island or its
+          neighbour. What follows are the versions most often told, not a
+          verdict. Scroll, and the map will retrace the ten-year detour
+          between a war's end and a man's front door.
+        </p>
+        <p class="hint">Scroll to begin the voyage.</p>
+      </section>
+      <div id="map" aria-hidden="true"></div>
+      <p id="current-stop" aria-live="polite" class="visually-hidden"></p>
+      <div id="story"></div>
     </main>
     <script type="module" src="./main.ts"></script>
   </body>
