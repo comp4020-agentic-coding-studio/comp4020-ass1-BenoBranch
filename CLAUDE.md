@@ -160,3 +160,17 @@ catching you out, a fact about the stack the agent keeps getting wrong --- write
 it down here. Growing this file is the work of harness engineering, and the gap
 between this boilerplate and your own version is part of what your prototype
 says about the developer you're becoming.
+
+## Stack facts learned this week
+
+- **`<pre>` is not a raw-text element.** Unlike `<script>`/`<style>`, the HTML
+  parser still looks for tags inside `<pre>`. A literal `<` in hand-drawn ASCII
+  art (e.g. a figlet-style "R" glyph) breaks `vite build` with a parse5
+  `invalid-first-character-of-tag-name` error. Escape it as `&lt;` like any
+  other text content. Caught by `pnpm check`'s build step before any of it was
+  committed --- run `pnpm check` locally before every commit, not just before
+  pushing.
+- **CSS content that swaps generic and descendant selectors trips
+  `no-descending-specificity`.** Group `a` / `nav a` / `a:hover` rules in
+  ascending specificity order (element-only, then descendant, then
+  pseudo-class), not in whatever order feels narratively obvious.
