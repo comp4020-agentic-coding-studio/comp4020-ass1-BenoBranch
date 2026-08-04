@@ -1,12 +1,21 @@
 :root {
   color-scheme: dark;
+
+  /* Palette from the Penguin Classics Odyssey cover: mustard-ochre vase
+     figures, a brick-red title band, slate-blue linework, cream parchment. */
+  --ink: 26 19 15;
+  --parchment: 244 233 216;
+  --ochre: 217 164 65;
+  --brick: 168 54 43;
+  --slate: 137 153 178;
 }
 
 body {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
   line-height: 1.6;
-  color: #f4f1ea;
+  color: rgb(var(--parchment));
+  background: rgb(var(--ink));
 }
 
 h1 {
@@ -24,7 +33,7 @@ p {
 }
 
 a {
-  color: #f4f1ea;
+  color: rgb(var(--parchment));
 }
 
 header {
@@ -36,12 +45,12 @@ header {
 nav a {
   padding: 0.5rem 0.75rem;
   border-radius: 0.25rem;
-  background: rgb(0 0 0 / 55%);
+  background: rgb(var(--ink) / 55%);
   text-decoration: none;
 }
 
 nav a:hover {
-  background: rgb(0 0 0 / 75%);
+  background: rgb(var(--brick) / 65%);
 }
 
 main {
@@ -52,7 +61,7 @@ main {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: #1a1a1a;
+  background: rgb(var(--ink));
 }
 
 #intro,
@@ -70,42 +79,120 @@ main {
 }
 
 #intro {
-  background: rgb(0 0 0 / 60%);
+  background: rgb(var(--ink) / 60%);
   backdrop-filter: blur(0.25rem);
 }
 
 .stop {
-  background: rgb(0 0 0 / 65%);
+  background: rgb(var(--ink) / 65%);
   backdrop-filter: blur(0.25rem);
   border-left: 0.25rem solid transparent;
   transition: border-color 0.3s ease;
 }
 
 .stop.is-active {
-  border-left-color: #d9a441;
+  border-left-color: rgb(var(--ochre));
 }
 
 .hint {
   font-style: italic;
-  opacity: 0.8;
+  color: rgb(var(--slate));
 }
 
-.waypoint-dot {
-  width: 0.85rem;
-  height: 0.85rem;
-  border-radius: 50%;
-  background: #c0392b;
-  border: 0.15rem solid #f4f1ea;
-  box-shadow: 0 0 0.25rem rgb(0 0 0 / 50%);
+.waypoint-marker {
+  width: 1.6rem;
+  height: 1.6rem;
+  color: rgb(var(--brick));
   cursor: default;
+  filter: drop-shadow(0 0 0.2rem rgb(var(--ink) / 70%));
   transition:
     transform 0.3s ease,
-    background-color 0.3s ease;
+    color 0.3s ease;
 }
 
-.waypoint-dot.is-active {
-  background: #d9a441;
-  transform: scale(1.6);
+.waypoint-marker svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.waypoint-marker.is-active {
+  color: rgb(var(--ochre));
+  transform: scale(1.4);
+}
+
+.ship-marker {
+  width: 1.9rem;
+  height: 1.9rem;
+  color: rgb(var(--parchment));
+  pointer-events: none;
+  filter: drop-shadow(0 0 0.3rem rgb(var(--ink) / 80%));
+}
+
+.ship-marker svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.progress-bar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 2;
+  padding: 0.85rem 1.25rem;
+  background: rgb(var(--ink) / 55%);
+  backdrop-filter: blur(0.25rem);
+}
+
+.progress-track {
+  position: relative;
+  height: 0.2rem;
+  border-radius: 999px;
+  background: rgb(var(--parchment) / 25%);
+}
+
+.progress-fill {
+  position: absolute;
+  z-index: 0;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: 999px;
+  background: rgb(var(--ochre));
+}
+
+.progress-keystone {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: rgb(var(--ink));
+  border: 0.15rem solid rgb(var(--parchment));
+  transform: translate(-50%, -50%);
+}
+
+.progress-keystone.is-active {
+  background: rgb(var(--ochre));
+  border-color: rgb(var(--ochre));
+}
+
+.progress-marker {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 0;
+  width: 1.3rem;
+  height: 1.3rem;
+  color: rgb(var(--parchment));
+  filter: drop-shadow(0 0 0.2rem rgb(var(--ink) / 60%));
+  transform: translate(-50%, -50%);
+}
+
+.progress-marker svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .visually-hidden {

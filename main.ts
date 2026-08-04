@@ -1,14 +1,53 @@
-import { Map as MapLibreMap, Marker, LngLatBounds } from "maplibre-gl";
+import {
+  Map as MapLibreMap,
+  Marker,
+  LngLatBounds,
+  type GeoJSONSource,
+} from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { activeWaypoint, waypoints } from "./voyage";
+import {
+  activeWaypoint,
+  waypoints,
+  buildRoute,
+  buildFullRoute,
+  splitRoute,
+  easedPosition,
+  type LngLat,
+} from "./voyage";
+import { ICONS, SHIP_ICON } from "./icons";
 
 const storyEl = document.querySelector<HTMLDivElement>("#story");
 const mapEl = document.querySelector<HTMLDivElement>("#map");
 const currentStopEl = document.querySelector<HTMLElement>("#current-stop");
+const progressBarEl = document.querySelector<HTMLDivElement>("#progress-bar");
 
-if (storyEl && mapEl && currentStopEl) {
+if (storyEl && mapEl && currentStopEl && progressBarEl) {
   const story = storyEl;
   const currentStop = currentStopEl;
+  const progressFill =
+    progressBarEl.querySelector<HTMLElement>(".progress-fill");
+  const progressMarker = progressBarEl.querySelector<HTMLElement>(
+    ".progress-marker",
+  );
+  const progressTrack =
+    progressBarEl.querySelector<HTMLElement>(".progress-track");
+
+  const keystoneEls = waypoints.map((waypoint, index) => {
+    const keystone = document.createElement("div");
+    keystone.className = "progress-keystone";
+    keystone.title = waypoint.name;
+    keystone.style.left = `${((index + 0.5) / waypoints.length) * 100}%`;
+    progressTrack?.appendChild(keystone);
+    return keystone;
+  });
+
+  if (progressMarker) progressMarker.innerHTML = SHIP_ICON;
+
+  function updateProgressBar(progress: number) {
+    const percent = `${progress * 100}%`;
+    if (progressFill) progressFill.style.width = percent;
+    if (progressMarker) progressMarker.style.left = percent;
+  }
 
   story.innerHTML = waypoints
     .map(
@@ -41,11 +80,119 @@ if (storyEl && mapEl && currentStopEl) {
   });
 
   const markers = waypoints.map((waypoint) => {
-    const dot = document.createElement("div");
-    dot.className = "waypoint-dot";
-    dot.title = waypoint.name;
-    return new Marker({ element: dot }).setLngLat(waypoint.center).addTo(map);
+    const el = document.createElement("div");
+    el.className = "waypoint-marker";
+    el.title = waypoint.name;
+    el.innerHTML = ICONS[waypoint.icon];
+    return new Marker({ element: el }).setLngLat(waypoint.center).addTo(map);
   });
+
+  // The reader's own position: a ship icon that rides the traveled trail
+  // (see updateRoute below), rather than jumping stop to stop like the map
+  // camera does.
+  const shipEl = document.createElement("div");
+  shipEl.className = "ship-marker";
+  shipEl.setAttribute("aria-hidden", "true");
+  shipEl.innerHTML = SHIP_ICON;
+  const shipMarker = new Marker({
+    element: shipEl,
+    rotationAlignment: "map",
+    pitchAlignment: "map",
+  })
+    .setLngLat(waypoints[0].center)
+    .addTo(map);
+
+  function updateShipMarker(traveled: LngLat[]) {
+    const lead = traveled[traveled.length - 1] ?? waypoints[0].center;
+    shipMarker.setLngLat(lead);
+
+    const prev = traveled[traveled.length - 2];
+    if (!prev || reduceMotion) return;
+    const dx = lead[0] - prev[0];
+    const dy = lead[1] - prev[1];
+    if (dx === 0 && dy === 0) return;
+    shipMarker.setRotation((Math.atan2(dx, dy) * 180) / Math.PI);
+  }
+
+  // The voyage line: a dotted line for the whole planned route, with a
+  // solid trail drawn on top of whatever stretch has already been "sailed"
+  // (see continuousPosition/splitRoute in voyage.ts). Both wobble a little
+  // rather than running straight stop-to-stop, so it reads as a ship's wake
+  // instead of a flight path.
+  const routeSegments = buildRoute();
+  const fullRoute = buildFullRoute(routeSegments);
+  let routeReady = false;
+
+  function emptyLine(): LngLat[] {
+    const start = fullRoute[0];
+    return start ? [start, start] : [];
+  }
+
+  // Camera follow/lock: by default the camera tracks the ship's live position
+  // on the trail (it's usually mid-transit between stops while a stop's text
+  // is on screen); only when the ship is actually near a waypoint does the
+  // camera hold the curated center/zoom authored for that stop.
+  const LOCK_THRESHOLD = 0.18;
+  // Following eases toward its target rather than jumping straight to it:
+  // called every scroll frame, a fresh short ease re-targets from wherever
+  // the camera currently is, so it reads as a continuous chase rather than
+  // a series of instant cuts — including the moment a lock releases and the
+  // camera has to cross the gap back to the ship in one go.
+  const FOLLOW_EASE_MS = 220;
+  let lockedIndex: number | null = null;
+
+  function updateCamera(position: number, leadPoint: LngLat | undefined) {
+    const nearest = Math.round(position);
+    const distance = Math.abs(position - nearest);
+
+    if (distance < LOCK_THRESHOLD) {
+      if (lockedIndex !== nearest) {
+        lockedIndex = nearest;
+        const waypoint = waypoints[nearest];
+        map.flyTo({
+          center: waypoint.center,
+          zoom: waypoint.zoom,
+          duration: reduceMotion ? 0 : 1200,
+          essential: true,
+        });
+      }
+      return;
+    }
+
+    lockedIndex = null;
+    if (!leadPoint) return;
+    const segIndex = Math.min(Math.max(Math.floor(position), 0), waypoints.length - 2);
+    const localT = Math.min(Math.max(position - segIndex, 0), 1);
+    const zoom =
+      waypoints[segIndex].zoom +
+      (waypoints[segIndex + 1].zoom - waypoints[segIndex].zoom) * localT;
+    map.easeTo({
+      center: leadPoint,
+      zoom,
+      duration: reduceMotion ? 0 : FOLLOW_EASE_MS,
+      essential: true,
+    });
+  }
+
+  function updateRoute(position: number): LngLat[] {
+    const { traveled } = splitRoute(routeSegments, position);
+    updateShipMarker(traveled);
+
+    if (routeReady) {
+      const source = map.getSource("voyage-traveled") as
+        | GeoJSONSource
+        | undefined;
+      source?.setData({
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "LineString",
+          coordinates: traveled.length >= 2 ? traveled : emptyLine(),
+        },
+      });
+    }
+    return traveled;
+  }
 
   // -1 means "showing the whole-voyage overview, no stop active yet" —
   // the state the map is already in via `bounds` above, before any scroll.
@@ -59,11 +206,15 @@ if (storyEl && mapEl && currentStopEl) {
     for (const marker of markers) {
       marker.getElement().classList.remove("is-active");
     }
+    for (const keystone of keystoneEls) {
+      keystone.classList.remove("is-active");
+    }
   }
 
   function showOverview() {
     const wasShowingAStop = currentIndex !== -1;
     currentIndex = -1;
+    lockedIndex = null;
     if (wasShowingAStop) {
       map.fitBounds(overviewBounds, {
         padding: overviewPadding,
@@ -79,17 +230,11 @@ if (storyEl && mapEl && currentStopEl) {
     currentIndex = index;
     const waypoint = waypoints[index];
 
-    map.flyTo({
-      center: waypoint.center,
-      zoom: waypoint.zoom,
-      duration: reduceMotion ? 0 : 1500,
-      essential: true,
-    });
-
     clearActiveMarkers();
     stopEls[index].classList.add("is-active");
     stopEls[index].setAttribute("aria-current", "true");
     markers[index].getElement().classList.add("is-active");
+    keystoneEls[index].classList.add("is-active");
 
     currentStop.textContent = waypoint.name;
   }
@@ -100,12 +245,19 @@ if (storyEl && mapEl && currentStopEl) {
 
     if (scrolled <= 0) {
       showOverview();
+      updateProgressBar(0);
+      updateRoute(0);
       return;
     }
 
     const scrollable = rect.height - window.innerHeight;
     const progress = scrollable > 0 ? scrolled / scrollable : 0;
-    setActiveStop(activeWaypoint(progress));
+    const clamped = Math.min(Math.max(progress, 0), 1);
+    setActiveStop(activeWaypoint(clamped));
+    updateProgressBar(clamped);
+    const eased = easedPosition(clamped);
+    const traveled = updateRoute(eased);
+    updateCamera(eased, traveled[traveled.length - 1]);
   }
 
   let ticking = false;
@@ -120,5 +272,51 @@ if (storyEl && mapEl && currentStopEl) {
 
   window.addEventListener("scroll", onScrollOrResize, { passive: true });
   window.addEventListener("resize", onScrollOrResize);
-  map.on("load", updateFromScroll);
+
+  map.on("load", () => {
+    map.addSource("voyage-route", {
+      type: "geojson",
+      data: {
+        type: "Feature",
+        properties: {},
+        geometry: { type: "LineString", coordinates: fullRoute },
+      },
+    });
+    map.addSource("voyage-traveled", {
+      type: "geojson",
+      data: {
+        type: "Feature",
+        properties: {},
+        geometry: { type: "LineString", coordinates: emptyLine() },
+      },
+    });
+
+    // Dotted route first, solid traveled trail second, so the solid trail
+    // visually overwrites the dots along the stretch already sailed.
+    map.addLayer({
+      id: "voyage-route-dotted",
+      type: "line",
+      source: "voyage-route",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#f4f1ea",
+        "line-width": 2.5,
+        "line-opacity": 0.55,
+        "line-dasharray": [0, 2],
+      },
+    });
+    map.addLayer({
+      id: "voyage-route-traveled",
+      type: "line",
+      source: "voyage-traveled",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#d9a441",
+        "line-width": 3,
+      },
+    });
+
+    routeReady = true;
+    updateFromScroll();
+  });
 }

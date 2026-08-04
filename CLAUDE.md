@@ -125,6 +125,16 @@ means building legibly is part of building well.
   came together, and that record is read, not just the final state. A trail that
   grew alongside the code is the strongest evidence of your process; a single
   dump the night before is the weakest.
+- **Update `.process-log.md` as you go, not at the end.** It's gitignored
+  working material (see its own header) for exactly one job: raw notes to pull
+  the 3--4 strongest moments from into `PROCESS.md`, and the one breakthrough
+  into `reflections/`. After any substantial change --- a design decision, a
+  bug and its real fix, a piece of feedback acted on, a check that went red
+  then green --- append an entry before moving on: what happened, what was
+  decided instead of the obvious thing, how it was checked, and the commit
+  hash once it lands. Do this without being asked each session. Writing it
+  from memory afterward loses exactly the detail (what you almost did, why you
+  rejected it) that makes a `PROCESS.md` moment worth citing.
 - **Keep a process overview** (`PROCESS.md`). A short reading-guide, not an
   essay: what you built, the moments that mattered --- each pointing at a
   commit, a `CLAUDE.md` change, or a prompt and the commit it produced --- and
