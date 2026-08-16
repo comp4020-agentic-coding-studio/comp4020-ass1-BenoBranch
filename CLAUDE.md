@@ -184,3 +184,20 @@ says about the developer you're becoming.
   `no-descending-specificity`.** Group `a` / `nav a` / `a:hover` rules in
   ascending specificity order (element-only, then descendant, then
   pseudo-class), not in whatever order feels narratively obvious.
+
+## Tracking work with TODO.md
+
+`TODO.md` at the repo root is the running task list --- feature requests,
+bugs, follow-ups, whatever's pending. A `.claude/hooks/` SessionStart hook
+(machine-local, since `.claude/` is gitignored in this repo) reads it at the
+start of every session and injects it into context, so a new session picks up
+where the last one left off without being told. Convention:
+
+- `[ ]` --- not started
+- `[~]` --- in progress (mark this the moment you start working on an item)
+- `[x]` --- done
+
+Update the file directly as work happens, not in a batch at the end: flip an
+item to `[~]` when you pick it up, `[x]` the moment its check goes green. If
+the user adds a new ask mid-session, add it as a new `[ ]` line rather than
+letting it live only in chat history.
