@@ -64,16 +64,16 @@ Commit [`5b1d715`](https://github.com/comp4020-agentic-coding-studio/comp4020-as
 
 1. **what happened**
 
-Running pnpm build + pnpm preview resulted in a blank map canvas with zero console errors, because Vite’s fallback served index.html with an HTTP 200 status for missing dynamically loaded assets.  
+After shipping and verifying the live URL returned a 200, the deployed site showed a mostly black map canvas with a few faded tile fragments in one corner, pnpm check and the CI links check had stayed green the entire time.
 
 2. **what you did instead of the obvious thing**
 
-Instead of assuming the build script was broken or writing dev-only workarounds, I investigated Rollup's chunking behavior. I found MapLibre’s Web Worker (maplibre-gl-worker.mjs) was excluded from dist/ due to dynamic import.meta.url loading. I configured vite.config.ts to explicitly bundle the worker using ?worker&url and passed it via maplibregl.setWorkerUrl().  
+Rather than re-running checks or assuming the deploy was flaky, I rebuilt dist/ and served it with a plain static server (matching how GitHub Pages actually serves it, unlike vite dev, which serves node_modules unbundled) and diffed the network requests. MapLibre computes its worker script's URL at runtime relative to its own module, but Rollup had inlined that module into the single JS bundle, so the worker file — and a second file it statically imports, maplibre-gl-shared.mjs — were never emitted to dist/. I imported both with Vite's ?url suffix so they land in dist/assets/, called setWorkerUrl() to point MapLibre at the real built path, and added an assetFileNames override in vite.config.ts keeping those two files unhashed so the worker's own relative import between them keeps resolving across deploys.
 
 3. **how you knew it was right**
 
-The build generated a self-contained 469 kB worker chunk in dist/assets/. A Playwright test against the preview server confirmed map.loaded() returned true and road geometries rendered cleanly across desktop and mobile viewports.  
+Neither pnpm check nor the links checker inspects a URL a worker thread requests at runtime, so I verified with the same static-serve setup that reproduced the bug, plus a one-off Playwright browser (not added as a project dependency): zero failed requests, zero console errors, full basemap and route line visible at both 1920×1080 and 390×844. Then re-checked the same way directly against the live deployed URL after the fix shipped.
 
 4. **the citation**
 
-Commit [`25d7207`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-BenoBranch/commit/25d720702ca30a113b549c75eee41d123debaf7d)
+Commit [`d77bcf2`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-BenoBranch/commit/d77bcf223a1ba77c94da483590f6af0c03a12796)
