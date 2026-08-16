@@ -24,10 +24,13 @@ const storyEl = document.querySelector<HTMLDivElement>("#story");
 const mapEl = document.querySelector<HTMLDivElement>("#map");
 const currentStopEl = document.querySelector<HTMLElement>("#current-stop");
 const progressBarEl = document.querySelector<HTMLDivElement>("#progress-bar");
+const restartButtonEl =
+  document.querySelector<HTMLButtonElement>("#restart-button");
 
-if (storyEl && mapEl && currentStopEl && progressBarEl) {
+if (storyEl && mapEl && currentStopEl && progressBarEl && restartButtonEl) {
   const story = storyEl;
   const currentStop = currentStopEl;
+  const restartButton = restartButtonEl;
   const progressFill =
     progressBarEl.querySelector<HTMLElement>(".progress-fill");
   const progressMarker = progressBarEl.querySelector<HTMLElement>(
@@ -52,6 +55,14 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
     const percent = `${progress * 100}%`;
     if (progressFill) progressFill.style.width = percent;
     if (progressMarker) progressMarker.style.left = percent;
+  }
+
+  // Scroll rarely lands on exactly 1 (rubber-banding, sub-pixel rounding),
+  // so the button appears a hair before the true bottom rather than never.
+  const JOURNEY_END_THRESHOLD = 0.995;
+
+  function updateRestartButton(progress: number) {
+    restartButton.hidden = progress < JOURNEY_END_THRESHOLD;
   }
 
   story.innerHTML = waypoints
@@ -304,6 +315,7 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
       updateProgressBar(0);
       updateRoute(0);
       updateStopContentTransitions(0);
+      updateRestartButton(0);
       return;
     }
 
@@ -314,6 +326,7 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
     setActiveStop(activeIndex);
     updateStopContentTransitions(clamped);
     updateProgressBar(clamped);
+    updateRestartButton(clamped);
     const eased = easedPosition(clamped);
     const traveled = updateRoute(eased);
     updateCamera(eased, traveled[traveled.length - 1]);
@@ -364,6 +377,10 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
     const top = scrollYForProgress((start + end) / 2);
     window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
   }
+
+  restartButton.addEventListener("click", () => {
+    scrollToStop(-1);
+  });
 
   window.addEventListener("keydown", (event) => {
     if (isInteractiveTarget(event.target)) return;

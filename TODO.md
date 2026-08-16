@@ -10,4 +10,4 @@
 
 [x] Add a little bit about what each of the real world locations do today, or a fun fact about them
 
-[] Once the user finishes the journey, show a restart button to restart the journey so they dont have to scroll all the way to the top
+[x] Once the user finishes the journey, show a restart button to restart the journey so they dont have to scroll all the way to the top

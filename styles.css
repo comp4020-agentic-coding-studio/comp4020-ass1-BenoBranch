@@ -170,6 +170,35 @@ main {
   height: 100%;
 }
 
+.restart-button {
+  position: fixed;
+  z-index: 3;
+  inset: auto auto 4.5rem 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.5rem;
+  font: inherit;
+  font-size: 1rem;
+  color: rgb(var(--parchment));
+  background: rgb(var(--brick));
+  border: 0.15rem solid rgb(var(--ochre));
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 0.25rem 0.75rem rgb(var(--ink) / 50%);
+  transition:
+    opacity 0.5s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.restart-button:hover {
+  background: rgb(var(--ochre));
+  border-color: rgb(var(--parchment));
+}
+
+.restart-button[hidden] {
+  display: none;
+}
+
 .progress-bar {
   position: fixed;
   inset: auto 0 0;
