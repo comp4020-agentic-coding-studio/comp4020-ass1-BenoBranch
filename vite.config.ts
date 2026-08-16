@@ -24,6 +24,19 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: htmlEntries(),
+      output: {
+        // maplibre-gl's worker imports its "shared" chunk by a fixed
+        // relative specifier (./maplibre-gl-shared.mjs) baked into the
+        // library's own prebuilt file, not something Vite rewrites. If we
+        // let the default content-hashed asset names apply, that import
+        // stops resolving the moment the hash changes. Keep these two
+        // maplibre-gl-owned assets unhashed so the worker's own relative
+        // import keeps finding its sibling.
+        assetFileNames: (asset) =>
+          asset.names?.some((name) => /^maplibre-gl-(worker|shared)\.mjs$/.test(name))
+            ? "assets/[name][extname]"
+            : "assets/[name]-[hash][extname]",
+      },
     },
   },
   // maplibre-gl ships its own worker as a separate file; Vite's dep

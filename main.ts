@@ -2,9 +2,24 @@ import {
   Map as MapLibreMap,
   Marker,
   LngLatBounds,
+  setWorkerUrl,
   type GeoJSONSource,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
+// Not used directly — importing it is what makes Vite emit this file at all.
+// The worker module above imports it by a fixed relative path, so it only
+// needs to land next to the worker in dist/assets/, unhashed (see
+// vite.config.ts), not be referenced by name from here.
+import "maplibre-gl/dist/maplibre-gl-shared.mjs?url";
+
+// MapLibre computes its worker script's URL at runtime relative to its own
+// bundled module, but Rollup inlines that module into our single JS chunk,
+// so the worker file it's looking for was never emitted to dist/ — a 404 on
+// the deployed site, invisible in dev where node_modules is served
+// unbundled. Importing it with `?url` copies the real file into dist/assets
+// and gives us its built path to hand back to MapLibre explicitly.
+setWorkerUrl(maplibreWorkerUrl);
 import {
   activeWaypoint,
   continuousPosition,
