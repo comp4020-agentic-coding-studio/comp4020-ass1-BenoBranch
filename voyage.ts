@@ -8,6 +8,7 @@ export interface Waypoint {
   copy: string;
   icon: IconName;
   modernName: string;
+  todayFact: string;
 }
 
 // Traditional/legendary identifications, not verified history — the Odyssey's
@@ -22,6 +23,7 @@ export const waypoints: Waypoint[] = [
     copy: "Ten years of war are over. Odysseus loads his ships and turns for Ithaca — a few weeks' sail away, by any reasonable estimate. It will take him ten years.",
     icon: "helmet",
     modernName: "Hisarlık, near Çanakkale, Turkey",
+    todayFact: "A UNESCO World Heritage site since 1998 — you can walk the excavated walls, and a giant wooden horse replica greets visitors at the gate.",
   },
   {
     id: "cicones",
@@ -31,6 +33,7 @@ export const waypoints: Waypoint[] = [
     copy: "The first stop, and the first mistake: his men raid the Cicones' coast, linger to feast on the spoils, and are still there when the counterattack comes.",
     icon: "flame",
     modernName: "Near Maroneia, Thrace, Greece",
+    todayFact: "Still wine country today — the region's sweet Maroneia wine is often linked to the potent vintage the poem says Odysseus took from a Ciconian priest.",
   },
   {
     id: "lotus-eaters",
@@ -40,6 +43,7 @@ export const waypoints: Waypoint[] = [
     copy: "A storm blows the fleet off any known map. The people here offer a flower that erases the wish to go anywhere else. Odysseus drags his men back to the ships by force.",
     icon: "flower",
     modernName: "Djerba, Tunisia",
+    todayFact: "Now a popular beach-resort island, home to the Ghriba Synagogue, one of the oldest synagogues in the world.",
   },
   {
     id: "cyclops",
@@ -49,6 +53,7 @@ export const waypoints: Waypoint[] = [
     copy: "Polyphemus traps them in his cave and eats two men a night. Odysseus blinds him and escapes — then can't resist shouting his real name back at the shore, giving a vengeful god a target.",
     icon: "eye",
     modernName: "Aci Trezza, Sicily, Italy",
+    todayFact: "A working fishing village whose offshore sea stacks, the Faraglioni, are locally said to be the boulders Polyphemus hurled after the fleeing ships.",
   },
   {
     id: "aeolia",
@@ -58,6 +63,7 @@ export const waypoints: Waypoint[] = [
     copy: "Aeolus gives Odysseus a bag holding every wind but the one he needs. Ithaca comes into view. His crew, sure it's hoarded treasure, opens the bag while he sleeps.",
     icon: "wind",
     modernName: "Aeolian Islands, Sicily, Italy",
+    todayFact: "A UNESCO World Heritage archipelago that includes Stromboli, one of the few volcanoes on Earth that has been erupting almost continuously for centuries.",
   },
   {
     id: "circe",
@@ -67,6 +73,7 @@ export const waypoints: Waypoint[] = [
     copy: "Circe turns his men into pigs, then — once Odysseus resists her magic — into a year of feasting he doesn't leave of his own accord. His crew has to talk him back to the ships.",
     icon: "pig",
     modernName: "Monte Circeo, San Felice Circeo, Italy",
+    todayFact: "Now a national park and seaside resort; ruins on the headland are still pointed out to visitors as the remains of a temple to Circe.",
   },
   {
     id: "sirens",
@@ -76,6 +83,7 @@ export const waypoints: Waypoint[] = [
     copy: "A song that has drowned every sailor who ever heard it. Odysseus wants to hear it anyway, so his men bind him to the mast and stop their own ears with wax.",
     icon: "note",
     modernName: "Li Galli Islands, near Positano, Italy",
+    todayFact: "A privately owned islet once home to ballet legend Rudolf Nureyev, who bought it in the 1980s partly because of its Sirens legend.",
   },
   {
     id: "scylla-charybdis",
@@ -85,6 +93,7 @@ export const waypoints: Waypoint[] = [
     copy: "A strait too narrow to avoid both: a six-headed monster on one shore, a whirlpool that swallows the sea itself on the other. He chooses the monster, and loses six men to save the rest.",
     icon: "whirlpool",
     modernName: "Strait of Messina, Italy",
+    todayFact: "Real tidal currents here do form dangerous whirlpools, and a bridge to finally link Sicily to the mainland across it has been proposed and shelved for decades.",
   },
   {
     id: "ogygia",
@@ -94,6 +103,7 @@ export const waypoints: Waypoint[] = [
     copy: "The last of his crew are gone. Calypso keeps Odysseus on her island for seven years, offering immortality if he'll stay. He spends every one of them wanting to leave.",
     icon: "island",
     modernName: "Gozo, Malta",
+    todayFact: "Malta's laid-back sister island, where a sea cave overlooking Ramla Bay is marketed to tourists today as \"Calypso's Cave.\"",
   },
   {
     id: "ithaca",
@@ -103,6 +113,7 @@ export const waypoints: Waypoint[] = [
     copy: "Twenty years after he left for Troy, Odysseus reaches home alone, in a stranger's cloak, to find his own house full of men who assume he's already dead.",
     icon: "home",
     modernName: "Ithaki, Greece",
+    todayFact: "Still a small, sailboat-friendly island in the Ionian Sea, where ruins above Vathy are promoted as the \"School of Homer.\"",
   },
 ];
 

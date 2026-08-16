@@ -8,4 +8,6 @@
 
 [x] When scrolling, I want the text on the left to be locked to the screen until the user scrolls 25% towards the next location, then start scrolling the text down to the next location
 
-[] Add a little bit about what each of the real world locations do today, or a fun fact about them
+[x] Add a little bit about what each of the real world locations do today, or a fun fact about them
+
+[] Once the user finishes the journey, show a restart button to restart the journey so they dont have to scroll all the way to the top
