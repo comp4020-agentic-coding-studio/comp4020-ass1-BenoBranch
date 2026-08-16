@@ -82,7 +82,13 @@ main {
 /* .stop is a plain, tall scroll-driving block (its height set inline per
    waypoint, proportional to real travel distance); .stop-content is the
    viewport-sized panel that sticks in place inside it while the reader
-   scrolls through the rest of that block's height. */
+   scrolls through the rest of that block's height. It stays untransformed
+   and transparent so it's a continuous hit surface over the map for as
+   long as it's on screen — the visible, slide-away styling lives on the
+   inner .stop-panel instead, which main.ts moves independently. Splitting
+   these keeps the map's native scroll-zoom reachable everywhere except
+   where a stop's panel is actually covering it, instead of the box that
+   blocks map input sliding away with the box you can see. */
 .stop-content {
   position: sticky;
   top: 0;
@@ -94,6 +100,10 @@ main {
   box-sizing: border-box;
   max-width: 32rem;
   margin: 0 2rem;
+}
+
+.stop-panel {
+  box-sizing: border-box;
   padding: 2rem;
   background: rgb(var(--ink) / 65%);
   backdrop-filter: blur(0.25rem);
@@ -101,7 +111,7 @@ main {
   transition: border-color 0.3s ease;
 }
 
-.stop.is-active .stop-content {
+.stop.is-active .stop-panel {
   border-left-color: rgb(var(--ochre));
 }
 
@@ -115,6 +125,13 @@ main {
   font-size: 0.85rem;
   font-style: italic;
   color: rgb(var(--slate));
+}
+
+.today-fact {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  font-size: 0.9rem;
+  border-top: 1px solid rgb(var(--slate) / 30%);
 }
 
 .waypoint-marker {
@@ -226,9 +243,16 @@ main {
 }
 
 @media (width <= 480px) {
-  #intro,
+  #intro {
+    margin: 0 1rem;
+    padding: 1.5rem;
+  }
+
   .stop-content {
     margin: 0 1rem;
+  }
+
+  .stop-panel {
     padding: 1.5rem;
   }
 

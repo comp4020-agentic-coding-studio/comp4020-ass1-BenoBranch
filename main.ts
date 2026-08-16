@@ -59,9 +59,12 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
       (waypoint, index) => `
         <section class="stop" data-index="${index}" style="min-height: ${stopHeightVh(index)}vh">
           <div class="stop-content">
-            <h2>${waypoint.name}</h2>
-            <p>${waypoint.copy}</p>
-            <p class="modern-name">Modern-day: ${waypoint.modernName}</p>
+            <div class="stop-panel">
+              <h2>${waypoint.name}</h2>
+              <p>${waypoint.copy}</p>
+              <p class="modern-name">Modern-day: ${waypoint.modernName}</p>
+              <p class="today-fact">${waypoint.todayFact}</p>
+            </div>
           </div>
         </section>
       `,
@@ -69,7 +72,12 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
     .join("");
 
   const stopEls = story.querySelectorAll<HTMLElement>(".stop");
-  const stopContentEls = story.querySelectorAll<HTMLElement>(".stop-content");
+  // The slide/fade transform below is applied to .stop-panel, not
+  // .stop-content: .stop-content stays untransformed and full-height so it
+  // remains a continuous hit surface over the map the whole time a stop is
+  // on screen (see updateStopContentTransitions for why moving *this* box
+  // instead opened a gap for the map's native scroll-zoom to show through).
+  const stopPanelEls = story.querySelectorAll<HTMLElement>(".stop-panel");
   const reduceMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
@@ -248,28 +256,41 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
     currentStop.textContent = waypoint.name;
   }
 
-  // Each stop's text panel is pinned (via CSS `position: sticky`) for the
-  // first STOP_LOCK_FRACTION of that stop's own scroll range, then slides
-  // away over the rest — driven by raw (non-eased) scroll progress, since it
-  // should track the reader's actual scroll input rather than the ship's
-  // "lingers near port" easing used for the map camera.
+  // Each stop's text panel is pinned (via CSS `position: sticky` on the
+  // outer .stop-content) for the first STOP_LOCK_FRACTION of that stop's own
+  // scroll range, then visually slides away over the rest — driven by raw
+  // (non-eased) scroll progress, since it should track the reader's actual
+  // scroll input rather than the ship's "lingers near port" easing used for
+  // the map camera.
+  //
+  // The transform/opacity below is applied to the *inner* .stop-panel, never
+  // to .stop-content itself. .stop-content is the full-height sticky box
+  // that keeps the map covered (and its wheel input reaching the page
+  // instead of the map) for the entire time a stop is on screen; only the
+  // decorative panel inside it slides away. Moving .stop-content itself used
+  // to open a gap — once translated partway up, its hit box no longer
+  // covered the bottom of the viewport, exposing the fixed #map underneath
+  // to the cursor mid-transition (the reported "scroll grabs the map
+  // instead" bug). translateY is in vh, not %, because .stop-panel is only
+  // as tall as its content, not 100vh — a percentage of its own height
+  // wouldn't clear the screen.
   //
   // This is applied to *every* stop every tick (not just the active one):
-  // `position: sticky` naturally un-pins an element over the last 100vh of
-  // its own container regardless of STOP_LOCK_FRACTION, so once a stop
+  // `position: sticky` naturally un-pins .stop-content over the last 100vh
+  // of its own container regardless of STOP_LOCK_FRACTION, so once a stop
   // stopped being "active" and its transform was reset to "", it would snap
   // from wherever our 25%/75% curve had left it to wherever that native
   // fixed-100vh unstick math put it — a visible jump right at the boundary.
   // Applying the same formula continuously to already-passed stops instead
   // leaves them explicitly pinned at their fully-transitioned end state
-  // (translateY(-100%), opacity 0), so there's nothing for native sticky to
+  // (translateY(-100vh), opacity 0), so there's nothing for native sticky to
   // visibly override.
   function updateStopContentTransitions(clamped: number) {
     const raw = continuousPosition(clamped);
-    stopContentEls.forEach((el, index) => {
+    stopPanelEls.forEach((el, index) => {
       const local = raw - index;
       const t = stopTransitionProgress(local);
-      el.style.transform = `translateY(${-t * 100}%)`;
+      el.style.transform = `translateY(${-t * 100}vh)`;
       el.style.opacity = `${1 - t}`;
     });
   }
