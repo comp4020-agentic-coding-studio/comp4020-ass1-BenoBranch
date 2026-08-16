@@ -1,85 +1,79 @@
-# Process overview
-
-<!-- TEMPLATE: this file is a shape to fill in, not a form. Replace everything
-     in it with your own overview, and delete this comment — `pnpm
-     check:evidence` will remind you if it's still here. -->
-
-A reading-guide to how the work came together --- a map to your process, not an
-essay about it. Markers read this file and follow its citations; they don't
-trawl the repo for evidence you didn't point at, so if a moment mattered, cite
-it.
-
-This file is the shape; the course site's
-[assessment page](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#what-you-submit)
-is the requirement, and its
-[word counts](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#word-counts)
-cover every deliverable.
+# Process Overview
 
 ## What I built
 
-Inspired after recently watching Christopher Nolan's "The Oddysey" I built an interactive map that allows the user to trace Odysseus' journey home depicted in Homer's "The Oddysey". As the user scrolls through the map, they can trace the rough path that he took through the Mediterranean Sea, and read about the key points of interest that he stopped at along his journey including their modern real world names, and a little bit about what the location does today.
+Inspired after recently watching Christopher Nolan's "The Odyssey" I built a scroll driven storytelling map that allows the user to trace Odysseus' journey home depicted in Homer's "The Odyssey". As the user scrolls through the map, they can trace the rough path that he took through the Mediterranean Sea, and read about the key points of interest that he stopped at along his journey including their modern real world names, and a little bit about what the location does today. The website also supports keyboard input and works on mobile too.
 
 ## The moments that mattered
 
-Three or four for an assignment; fewer is fine for a weekly prototype. Keep the
-list short so each moment has room to do all four jobs:
+### Moment 1:
 
-1. **what happened** --- the problem, or the thing the agent got wrong
-2. **what you did instead of the obvious thing** --- the call you made, and why
-   it beat the obvious one
-3. **how you knew it was right** --- the check you ran, the viewport you looked
-   at, what you read before accepting the diff
-4. **the citation** --- a commit or commit range, a `CLAUDE.md` change, a check
-   that went from red to green, a prompt paired with the commit it produced
+1. **what happened**
 
-Jobs 2 and 3 are the ones the repo can't tell a reader on its own, so they're
-where the marks are. The strongest moments are the ones where a correction
-landed in the **harness** rather than in another prompt --- a rule added to
-`CLAUDE.md`, a check wired up, an attempt thrown away: re-prompting until it
-passes is the routine case, and changing what the agent works against is the
-skilled one.
+Across multi-day sessions, I struggled to track planned feature ideas and recall exact stopping points when starting new chats.
 
-Cite each moment as a link whose text is the commit hash or range and whose
-target is this repo's commit or compare URL, so a reader clicks straight to the
-evidence:
+2. **what you did instead of the obvious thing**
 
-- one commit: [`a1b2c3d`](https://github.com/YOUR-ORG/YOUR-REPO/commit/a1b2c3d)
-- a range:
-  [`a1b2c3d...e4f5a6b`](https://github.com/YOUR-ORG/YOUR-REPO/compare/a1b2c3d...e4f5a6b)
+Instead of external notes, I created a agent-readable TODO.md file to drive planning mode with task states ([ ], [~], [x]). To eliminate manual pasting, I built a .claude/hooks/ SessionStart hook that automatically injects TODO.md into the agent's context every time a session starts.
 
-To pair a prompt with the commit it produced, quote the prompt (curated, not a
-full transcript) next to the citation:
+3. **how you knew it was right**
 
-> the prompt, verbatim
+I could jump straight back into the development flow without re-explaining context. Mid-session ideas went straight into TODO.md as new items rather than disappearing in closed chat logs, ensuring no tasks were left half-finished.
 
-Screenshots are welcome where one carries the verification better than a
-sentence does. Commit the file to this repo and link it with a **relative**
-path, which is what makes it render on GitHub: `![alt text](docs/before.png)`.
-Images don't count towards the word count and don't replace the citation.
+4. **the citation**
 
-### A worked moment, for shape
+Commit [`5e3a859`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-BenoBranch/commit/5e3a85963b3b0ba633120c7fe66e653ee0513264)
 
-Delete this section along with the rest of the boilerplate --- it's here to show
-the four jobs in one paragraph, not to be imitated in content.
+### Moment 2:
 
-> The date formatter kept coming back with `toLocaleDateString()` and no locale
-> argument, so the same build rendered differently on my machine and in CI. I'd
-> already re-prompted it twice, which fixed the line but not the habit, so the
-> third time I put the rule in `CLAUDE.md` instead
-> ([`3f9ac21`](https://github.com/YOUR-ORG/YOUR-REPO/commit/3f9ac21)) and added
-> a spec test that fails on a bare `toLocaleDateString`. That's what told me it
-> had actually taken: the test went red against the old code and green against
-> the new, and the next two features it wrote passed it without prompting
-> ([`3f9ac21...b7e0d14`](https://github.com/YOUR-ORG/YOUR-REPO/compare/3f9ac21...b7e0d14)).
+1. **what happened**
 
-## Before you ship
+When scrolling between stops, text tiles un-stuck and slid away, causing the cursor to drop onto the map canvas and trigger map zoom instead of progressing the journey.
 
-`pnpm check:evidence` verifies your citations resolve to real commits, that the
-current reflection entry is in `reflections/`, and that your `CLAUDE.md` is
-there --- before a marker ever opens the file. It checks that your map is
-traceable, not that it is good: the marker judges whether your small,
-deliberately chosen set of moments shows real judgement and reflection. A green
-check is not a substitute for that curation.
+2. **what you did instead of the obvious thing**
 
-Images are deliberately not checked, because whether one renders is visible the
-moment you look. Open this file on GitHub and look at it before you ship.
+Instead of disabling scroll-zoom or hacking CSS opacity, I refactored the DOM scaffolding. I split .stop-content into an outer, transparent position: sticky container that maintains a permanent 100vh hit surface over the map, and an inner .stop-panel handling visual fades without moving the hit surface. I also fixed the denominator in voyage.ts (totalHeightVh - VIEWPORT_VH) and set MIN_VH to 150 to keep sticky pinning reliable.
+
+3. **how you knew it was right**
+
+I ran an automated playwright script sampling cursor hit-testing across stop transitions; it confirmed 0 canvas hits across 72 points on desktop (1920×1080) and 57 on mobile (390×844). A Playwright script verified .stop[i].getBoundingClientRect().top === 0 across all 10 stops, while all 27 unit tests stayed green in pnpm check.
+
+4. **the citation**
+
+Commit [`8efd698`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-BenoBranch/commit/8efd698d3c859c9c3e3e63e59ea74342f086e030)
+
+### Moment 3:
+
+1. **what happened**
+
+While setting up the interactive map, the standard choice was Mapbox GL JS. Mapbox GL JS required a public API key that triggered pre-commit secret scanners. Additionally, jsdom unit testing couldn't render WebGL/canvas elements.
+
+2. **what you did instead of the obvious thing**
+
+I swapped Mapbox for MapLibre GL JS with keyless OpenFreeMap tiles. To solve testing without WebGL mocks, I decoupled domain logic from rendering by extracting scroll-to-waypoint math into a pure function in voyage.ts.
+
+3. **how you knew it was right**
+
+Interaction contract tests in spec/assignment-1.test.ts passed in vitest without WebGL, and the build pipeline ran smoothly without scanner flags or key setups.
+
+4. **the citation**
+
+Commit [`5b1d715`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-BenoBranch/commit/5b1d715f76396b834f96820c562abfd42e8105ac)
+
+### Moment 4:
+
+1. **what happened**
+
+Running pnpm build + pnpm preview resulted in a blank map canvas with zero console errors, because Vite’s fallback served index.html with an HTTP 200 status for missing dynamically loaded assets.  
+
+2. **what you did instead of the obvious thing**
+
+Instead of assuming the build script was broken or writing dev-only workarounds, I investigated Rollup's chunking behavior. I found MapLibre’s Web Worker (maplibre-gl-worker.mjs) was excluded from dist/ due to dynamic import.meta.url loading. I configured vite.config.ts to explicitly bundle the worker using ?worker&url and passed it via maplibregl.setWorkerUrl().  
+
+3. **how you knew it was right**
+
+The build generated a self-contained 469 kB worker chunk in dist/assets/. A Playwright test against the preview server confirmed map.loaded() returned true and road geometries rendered cleanly across desktop and mobile viewports.  
+
+4. **the citation**
+
+Commit [`25d7207`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-BenoBranch/commit/25d720702ca30a113b549c75eee41d123debaf7d)

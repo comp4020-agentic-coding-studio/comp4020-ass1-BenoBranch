@@ -1,0 +1,7 @@
+### 1. What was the breakthrough that moved the work forward?
+
+My biggest breakthrough was realizing that tweaking my prompts wasn't going to fix structural bugs. Whenever Claude lost session context or struggled with sticky scrolling, re-prompting it to try again usually went in circles. Things actually moved forward once I changed the project setup instead: I built a .claude/hooks/ hook to auto-inject TODO.md on every session start, extracted the scroll math in voyage.ts so vitest could test it without WebGL, and split the DOM into two layers to stop the cursor from dropping onto the map. Fixing the codebase and project setup directly solved root causes that prompt tuning couldn't touch, while also saving massive amounts of time in the long run.
+
+### 2. What did this work change about who I want to be as a software developer?
+
+At work right now, aside from using /init to utilise a quite simple .CLAUDE file, I interact with Claude by manually pasting context, rules, and notes into the chat at the start of every single session. Working on this assignment showed me how tedious and inefficient that really is. Going forward, I want to stop relying on manual setup and start building real project infrastructure upfront—like writing startup hooks, custom verification scripts, and strict test bounds straight into the repo. It is far more practical to build those safeguards into the environment once than to spend time manually setting up the AI every time I open a new chat.
