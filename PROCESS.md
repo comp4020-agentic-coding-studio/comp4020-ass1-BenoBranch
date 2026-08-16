@@ -17,7 +17,7 @@ cover every deliverable.
 
 ## What I built
 
-One paragraph: the thing, and the idea behind it.
+Inspired after recently watching Christopher Nolan's "The Oddysey" I built an interactive map that allows the user to trace Odysseus' journey home depicted in Homer's "The Oddysey". As the user scrolls through the map, they can trace the rough path that he took through the Mediterranean Sea, and read about the key points of interest that he stopped at along his journey including their modern real world names, and a little bit about what the location does today.
 
 ## The moments that mattered
 

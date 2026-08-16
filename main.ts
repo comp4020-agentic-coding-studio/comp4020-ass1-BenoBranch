@@ -7,11 +7,15 @@ import {
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
   activeWaypoint,
+  continuousPosition,
   waypoints,
   buildRoute,
   buildFullRoute,
   splitRoute,
   easedPosition,
+  stopHeightVh,
+  stopRange,
+  stopTransitionProgress,
   type LngLat,
 } from "./voyage";
 import { ICONS, SHIP_ICON } from "./icons";
@@ -36,7 +40,8 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
     const keystone = document.createElement("div");
     keystone.className = "progress-keystone";
     keystone.title = waypoint.name;
-    keystone.style.left = `${((index + 0.5) / waypoints.length) * 100}%`;
+    const { start, end } = stopRange(index);
+    keystone.style.left = `${((start + end) / 2) * 100}%`;
     progressTrack?.appendChild(keystone);
     return keystone;
   });
@@ -52,15 +57,19 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
   story.innerHTML = waypoints
     .map(
       (waypoint, index) => `
-        <section class="stop" data-index="${index}">
-          <h2>${waypoint.name}</h2>
-          <p>${waypoint.copy}</p>
+        <section class="stop" data-index="${index}" style="min-height: ${stopHeightVh(index)}vh">
+          <div class="stop-content">
+            <h2>${waypoint.name}</h2>
+            <p>${waypoint.copy}</p>
+            <p class="modern-name">Modern-day: ${waypoint.modernName}</p>
+          </div>
         </section>
       `,
     )
     .join("");
 
   const stopEls = story.querySelectorAll<HTMLElement>(".stop");
+  const stopContentEls = story.querySelectorAll<HTMLElement>(".stop-content");
   const reduceMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
@@ -239,6 +248,32 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
     currentStop.textContent = waypoint.name;
   }
 
+  // Each stop's text panel is pinned (via CSS `position: sticky`) for the
+  // first STOP_LOCK_FRACTION of that stop's own scroll range, then slides
+  // away over the rest — driven by raw (non-eased) scroll progress, since it
+  // should track the reader's actual scroll input rather than the ship's
+  // "lingers near port" easing used for the map camera.
+  //
+  // This is applied to *every* stop every tick (not just the active one):
+  // `position: sticky` naturally un-pins an element over the last 100vh of
+  // its own container regardless of STOP_LOCK_FRACTION, so once a stop
+  // stopped being "active" and its transform was reset to "", it would snap
+  // from wherever our 25%/75% curve had left it to wherever that native
+  // fixed-100vh unstick math put it — a visible jump right at the boundary.
+  // Applying the same formula continuously to already-passed stops instead
+  // leaves them explicitly pinned at their fully-transitioned end state
+  // (translateY(-100%), opacity 0), so there's nothing for native sticky to
+  // visibly override.
+  function updateStopContentTransitions(clamped: number) {
+    const raw = continuousPosition(clamped);
+    stopContentEls.forEach((el, index) => {
+      const local = raw - index;
+      const t = stopTransitionProgress(local);
+      el.style.transform = `translateY(${-t * 100}%)`;
+      el.style.opacity = `${1 - t}`;
+    });
+  }
+
   function updateFromScroll() {
     const rect = story.getBoundingClientRect();
     const scrolled = -rect.top;
@@ -247,13 +282,16 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
       showOverview();
       updateProgressBar(0);
       updateRoute(0);
+      updateStopContentTransitions(0);
       return;
     }
 
     const scrollable = rect.height - window.innerHeight;
     const progress = scrollable > 0 ? scrolled / scrollable : 0;
     const clamped = Math.min(Math.max(progress, 0), 1);
-    setActiveStop(activeWaypoint(clamped));
+    const activeIndex = activeWaypoint(clamped);
+    setActiveStop(activeIndex);
+    updateStopContentTransitions(clamped);
     updateProgressBar(clamped);
     const eased = easedPosition(clamped);
     const traveled = updateRoute(eased);
@@ -272,6 +310,52 @@ if (storyEl && mapEl && currentStopEl && progressBarEl) {
 
   window.addEventListener("scroll", onScrollOrResize, { passive: true });
   window.addEventListener("resize", onScrollOrResize);
+
+  // Keyboard nav jumps a whole stop at a time rather than nudging scroll
+  // position, so it reads as "go to the next stop" instead of "scroll a
+  // bit" — landing mid-way through a stop's own scroll range (not right at
+  // its boundary) keeps it clear of the neighbouring stop's activation edge.
+  const NEXT_KEYS = new Set(["ArrowDown", "ArrowRight", " ", "Spacebar"]);
+  const PREV_KEYS = new Set(["ArrowUp", "ArrowLeft"]);
+  const INTERACTIVE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A"]);
+
+  function isInteractiveTarget(target: EventTarget | null): boolean {
+    return (
+      target instanceof HTMLElement &&
+      (target.isContentEditable || INTERACTIVE_TAGS.has(target.tagName))
+    );
+  }
+
+  function scrollYForProgress(progress: number): number {
+    const rect = story.getBoundingClientRect();
+    const storyTop = window.scrollY + rect.top;
+    const scrollable = Math.max(story.offsetHeight - window.innerHeight, 0);
+    return storyTop + scrollable * progress;
+  }
+
+  function scrollToStop(index: number) {
+    const clamped = Math.min(Math.max(index, -1), waypoints.length - 1);
+    if (clamped < 0) {
+      window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+      return;
+    }
+    const { start, end } = stopRange(clamped);
+    const top = scrollYForProgress((start + end) / 2);
+    window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
+  }
+
+  window.addEventListener("keydown", (event) => {
+    if (isInteractiveTarget(event.target)) return;
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+    if (NEXT_KEYS.has(event.key)) {
+      event.preventDefault();
+      scrollToStop(currentIndex + 1);
+    } else if (PREV_KEYS.has(event.key)) {
+      event.preventDefault();
+      scrollToStop(currentIndex - 1);
+    }
+  });
 
   map.on("load", () => {
     map.addSource("voyage-route", {

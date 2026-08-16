@@ -64,8 +64,7 @@ main {
   background: rgb(var(--ink));
 }
 
-#intro,
-.stop {
+#intro {
   position: relative;
   z-index: 1;
   display: flex;
@@ -76,25 +75,44 @@ main {
   max-width: 32rem;
   margin: 0 2rem;
   padding: 2rem;
-}
-
-#intro {
   background: rgb(var(--ink) / 60%);
   backdrop-filter: blur(0.25rem);
 }
 
-.stop {
+/* .stop is a plain, tall scroll-driving block (its height set inline per
+   waypoint, proportional to real travel distance); .stop-content is the
+   viewport-sized panel that sticks in place inside it while the reader
+   scrolls through the rest of that block's height. */
+.stop-content {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  box-sizing: border-box;
+  max-width: 32rem;
+  margin: 0 2rem;
+  padding: 2rem;
   background: rgb(var(--ink) / 65%);
   backdrop-filter: blur(0.25rem);
   border-left: 0.25rem solid transparent;
   transition: border-color 0.3s ease;
 }
 
-.stop.is-active {
+.stop.is-active .stop-content {
   border-left-color: rgb(var(--ochre));
 }
 
 .hint {
+  font-style: italic;
+  color: rgb(var(--slate));
+}
+
+.modern-name {
+  margin-top: -0.5rem;
+  font-size: 0.85rem;
   font-style: italic;
   color: rgb(var(--slate));
 }
@@ -209,7 +227,7 @@ main {
 
 @media (width <= 480px) {
   #intro,
-  .stop {
+  .stop-content {
     margin: 0 1rem;
     padding: 1.5rem;
   }

@@ -7,6 +7,7 @@ export interface Waypoint {
   zoom: number;
   copy: string;
   icon: IconName;
+  modernName: string;
 }
 
 // Traditional/legendary identifications, not verified history — the Odyssey's
@@ -20,6 +21,7 @@ export const waypoints: Waypoint[] = [
     zoom: 11,
     copy: "Ten years of war are over. Odysseus loads his ships and turns for Ithaca — a few weeks' sail away, by any reasonable estimate. It will take him ten years.",
     icon: "helmet",
+    modernName: "Hisarlık, near Çanakkale, Turkey",
   },
   {
     id: "cicones",
@@ -28,6 +30,7 @@ export const waypoints: Waypoint[] = [
     zoom: 9,
     copy: "The first stop, and the first mistake: his men raid the Cicones' coast, linger to feast on the spoils, and are still there when the counterattack comes.",
     icon: "flame",
+    modernName: "Near Maroneia, Thrace, Greece",
   },
   {
     id: "lotus-eaters",
@@ -36,6 +39,7 @@ export const waypoints: Waypoint[] = [
     zoom: 8,
     copy: "A storm blows the fleet off any known map. The people here offer a flower that erases the wish to go anywhere else. Odysseus drags his men back to the ships by force.",
     icon: "flower",
+    modernName: "Djerba, Tunisia",
   },
   {
     id: "cyclops",
@@ -44,6 +48,7 @@ export const waypoints: Waypoint[] = [
     zoom: 9,
     copy: "Polyphemus traps them in his cave and eats two men a night. Odysseus blinds him and escapes — then can't resist shouting his real name back at the shore, giving a vengeful god a target.",
     icon: "eye",
+    modernName: "Aci Trezza, Sicily, Italy",
   },
   {
     id: "aeolia",
@@ -52,6 +57,7 @@ export const waypoints: Waypoint[] = [
     zoom: 9,
     copy: "Aeolus gives Odysseus a bag holding every wind but the one he needs. Ithaca comes into view. His crew, sure it's hoarded treasure, opens the bag while he sleeps.",
     icon: "wind",
+    modernName: "Aeolian Islands, Sicily, Italy",
   },
   {
     id: "circe",
@@ -60,6 +66,7 @@ export const waypoints: Waypoint[] = [
     zoom: 10,
     copy: "Circe turns his men into pigs, then — once Odysseus resists her magic — into a year of feasting he doesn't leave of his own accord. His crew has to talk him back to the ships.",
     icon: "pig",
+    modernName: "Monte Circeo, San Felice Circeo, Italy",
   },
   {
     id: "sirens",
@@ -68,6 +75,7 @@ export const waypoints: Waypoint[] = [
     zoom: 10,
     copy: "A song that has drowned every sailor who ever heard it. Odysseus wants to hear it anyway, so his men bind him to the mast and stop their own ears with wax.",
     icon: "note",
+    modernName: "Li Galli Islands, near Positano, Italy",
   },
   {
     id: "scylla-charybdis",
@@ -76,6 +84,7 @@ export const waypoints: Waypoint[] = [
     zoom: 10,
     copy: "A strait too narrow to avoid both: a six-headed monster on one shore, a whirlpool that swallows the sea itself on the other. He chooses the monster, and loses six men to save the rest.",
     icon: "whirlpool",
+    modernName: "Strait of Messina, Italy",
   },
   {
     id: "ogygia",
@@ -84,6 +93,7 @@ export const waypoints: Waypoint[] = [
     zoom: 10,
     copy: "The last of his crew are gone. Calypso keeps Odysseus on her island for seven years, offering immortality if he'll stay. He spends every one of them wanting to leave.",
     icon: "island",
+    modernName: "Gozo, Malta",
   },
   {
     id: "ithaca",
@@ -92,12 +102,86 @@ export const waypoints: Waypoint[] = [
     zoom: 11,
     copy: "Twenty years after he left for Troy, Odysseus reaches home alone, in a stranger's cloak, to find his own house full of men who assume he's already dead.",
     icon: "home",
+    modernName: "Ithaki, Greece",
   },
 ];
 
+// Real leg distances vary roughly 20x across the voyage (e.g. Ogygia→Ithaca
+// vs. Cyclops→Aeolia). Giving every stop an equal 1/N share of scroll made
+// the ship (which moves at a constant rate along the real route) reach a
+// waypoint long before the text scrolled past it on long legs. Instead, each
+// stop's share of scroll is weighted by the distance of the leg it covers, so
+// the ship's on-screen travel rate stays roughly constant throughout.
+function legDistance(a: LngLat, b: LngLat): number {
+  const avgLatRad = ((a[1] + b[1]) / 2) * (Math.PI / 180);
+  const dx = (b[0] - a[0]) * Math.cos(avgLatRad);
+  const dy = b[1] - a[1];
+  return Math.hypot(dx, dy);
+}
+
+// A stop's real height must exceed one viewport by enough that native CSS
+// `position: sticky` stays genuinely pinned through the whole locked phase
+// (STOP_LOCK_FRACTION): sticky un-pins once scroll-into-the-stop exceeds
+// (height - VIEWPORT_VH), so height must be >= VIEWPORT_VH / (1 -
+// STOP_LOCK_FRACTION) — 133.3vh at 25%. 150 gives comfortable margin (33%
+// true native pin) and also keeps the last stop's own range non-empty (see
+// SCROLLABLE_VH below).
+const MIN_VH = 150;
+const EXTRA_VH_PER_UNIT = 50;
+
+// Exactly one viewport, always 100vh by definition of the `vh` unit —
+// distinct from MIN_VH (which is a tunable floor above this).
+const VIEWPORT_VH = 100;
+
+const stopHeights: number[] = waypoints.map((waypoint, i) => {
+  if (i === waypoints.length - 1) return MIN_VH;
+  const distance = legDistance(waypoint.center, waypoints[i + 1].center);
+  return MIN_VH + EXTRA_VH_PER_UNIT * distance;
+});
+
+const totalHeightVh = stopHeights.reduce((sum, h) => sum + h, 0);
+
+// Browser scroll progress is `scrollY / (documentHeight - viewportHeight)`,
+// not `scrollY / documentHeight` — the last viewport's worth of content
+// never needs scrolling past, so it isn't part of the denominator. Boundaries
+// must divide by that same scrollable range or they drift out of sync with
+// the real progress value main.ts computes (early by ~one viewport's worth
+// of fraction), which is what let the ship's on-screen position and the
+// active text stop desync near the end of the voyage.
+const SCROLLABLE_VH = totalHeightVh - VIEWPORT_VH;
+
+const stopBoundaries: number[] = (() => {
+  const boundaries = [0];
+  let cumulative = 0;
+  for (const height of stopHeights) {
+    cumulative += height;
+    boundaries.push(cumulative / SCROLLABLE_VH);
+  }
+  // Kill floating-point drift from the division above so the last boundary
+  // is exactly 1, not 0.9999999999998.
+  boundaries[boundaries.length - 1] = 1;
+  return boundaries;
+})();
+
+export function stopHeightVh(index: number): number {
+  return stopHeights[index];
+}
+
+export function stopRange(index: number): { start: number; end: number } {
+  return { start: stopBoundaries[index], end: stopBoundaries[index + 1] };
+}
+
 export function activeWaypoint(progress: number): number {
   const clamped = Math.min(Math.max(progress, 0), 1);
-  return Math.min(Math.floor(clamped * waypoints.length), waypoints.length - 1);
+  for (let i = 0; i < waypoints.length; i++) {
+    // The `i === length - 1` fallback guards against `clamped` and
+    // `stopBoundaries[N]` differing by a floating-point hair at progress===1,
+    // which would otherwise fall through every bin unmatched.
+    if (i === waypoints.length - 1 || clamped < stopBoundaries[i + 1]) {
+      return i;
+    }
+  }
+  return waypoints.length - 1;
 }
 
 // Continuous counterpart to activeWaypoint: instead of snapping to a stop
@@ -106,7 +190,23 @@ export function activeWaypoint(progress: number): number {
 // smoothly within a stop's own scroll range rather than jumping stop to stop.
 export function continuousPosition(progress: number): number {
   const clamped = Math.min(Math.max(progress, 0), 1);
-  return Math.min(clamped * waypoints.length, waypoints.length - 1);
+  const index = activeWaypoint(clamped);
+  const { start, end } = stopRange(index);
+  const span = end - start;
+  const local = span > 0 ? (clamped - start) / span : 0;
+  return Math.min(index + local, waypoints.length - 1);
+}
+
+// Fraction of a stop's *own* local scroll range (0 at the stop's first pixel,
+// 1 at the next stop's first pixel) that the text panel has moved through,
+// after applying the lock/transition split: pinned in place for the first
+// STOP_LOCK_FRACTION, then sliding away linearly over the rest.
+export const STOP_LOCK_FRACTION = 0.25;
+
+export function stopTransitionProgress(localProgress: number): number {
+  const clamped = Math.min(Math.max(localProgress, 0), 1);
+  if (clamped <= STOP_LOCK_FRACTION) return 0;
+  return (clamped - STOP_LOCK_FRACTION) / (1 - STOP_LOCK_FRACTION);
 }
 
 // Asymmetric per-segment ease: leaving a waypoint ramps up slowly (a long,

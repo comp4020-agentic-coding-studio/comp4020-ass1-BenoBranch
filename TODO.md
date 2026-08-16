@@ -3,4 +3,9 @@
 [x] A progress bar down the bottom of the screen that has keystones for each POI, the progress bar moves to match where the user has scrolled to.
 [x] Icons to represent significant points about the POI, sirens for the sirens, cyclops etc..., The user icon on the progress bar and on the journey line to be represented by a greek ship icon etc...
 
-[] Add real modern names of locations from the book as a separate paragraph below the "story summary" block
+[x] Add real modern names of locations from the book as a separate paragraph below the "story summary" block
+[x] Add keyboard input options (arrow keys up and down, forwards and backwards, spacebar to auto move to the next location at a smooth scaling speed)
+
+[x] When scrolling, I want the text on the left to be locked to the screen until the user scrolls 25% towards the next location, then start scrolling the text down to the next location
+
+[] Add a little bit about what each of the real world locations do today, or a fun fact about them
